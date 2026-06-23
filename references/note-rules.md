@@ -1,0 +1,125 @@
+# Paper Notes — Index
+
+为每篇论文生成以下 6 个 Markdown 文件。根据论文类型（常规 / 综述 / 模糊类型）选择对应模板。
+
+> 路径说明：下表"模板"列均位于本 skill 的 `templates/` 子目录（即 `references/templates/paper-note-*.md`），以下用 `templates/<名>` 表示。
+
+## 常规论文模板
+
+| 文件 | 模板 | 说明 |
+|------|------|------|
+| `[File Stem].md` | `templates/paper-note-main.md` | 主入口页：导读、论文定位、阅读导航、内部索引 |
+| `[File Stem]-简报.md` | `templates/paper-note-brief.md` | 高密度摘要，适合快速回顾和分享 |
+| `[File Stem]-方法介绍.md` | `templates/paper-note-method.md` | 详细版技术笔记：方法拆解、公式、训练细节、复现风险 |
+| `[File Stem]-实验结果.md` | `templates/paper-note-experiments.md` | 扎实版实验笔记：设置、主结果、消融、效率、证据边界 |
+| `[File Stem]-审阅建议.md` | `templates/paper-note-review.md` | 审稿意见风格分析：优点、缺陷、major comments、最终判断 |
+| `[File Stem]-后续灵感.md` | `templates/paper-note-ideas.md` | 研究计划草案：可迁移模块、改进方向、实验议程 |
+
+## 综述 / 模糊类型模板
+
+| 文件 | 模板 | 说明 |
+|------|------|------|
+| `[File Stem].md` | `templates/paper-note-main.md` | 主入口页（通用） |
+| `[File Stem]-简报.md` | `templates/paper-note-brief-survey.md` | 高密度综述概览：范围、分类框架、关键发现、使用边界 |
+| `[File Stem]-方法介绍.md` | `templates/paper-note-taxonomy.md` | 详细版综述技术笔记：分类体系、各范式详解、技术演进 |
+| `[File Stem]-实验结果.md` | `templates/paper-note-comparison.md` | 扎实版综述对比笔记：性能表、benchmark、趋势、评测缺口 |
+| `[File Stem]-审阅建议.md` | `templates/paper-note-review-survey.md` | 综述审稿意见：覆盖面、分类合理性、时效与公平性 |
+| `[File Stem]-后续灵感.md` | `templates/paper-note-ideas-survey.md` | 研究路线图：领域空白、benchmark 缺口、后续议程 |
+
+## 通用规则
+
+- 全部内容使用**简体中文**
+- 所有文件名和 wikilink 目标都使用 `File Stem`
+- `parentNote` 固定为 `"[[<File Stem>]]"`
+- frontmatter 必须是**合法 YAML**
+- 所有字符串值必须使用双引号
+- 空字符串写成 `""`
+- 空数组写成 `[]`
+- 缺失信息只能写：
+  - `"论文未报告"`
+  - `"无法从文中确认"`
+  - `"未提供公开链接"`
+  - `"未执行外部检索，无法确认"`
+- 不要中途停下来要求用户回复 `Continue`
+- 可使用 `$inline$` 和 `$$block$$` 数学公式
+- `uid`：所有笔记统一使用同一个时间戳，格式为 `YYYYMMDDHHMMSS`，取开始生成第一份笔记时的当前时间
+- `citekey`：`<FirstAuthorSurname><FirstWordOfTitle><Year>` 中的 FirstWord 应跳过冠词和介词（a, an, the, on, in, of, for, to, with），取第一个实词
+- 插入原论文图片时，扩展名以实际文件为准（可能是 `.jpg`、`.png`、`.pdf`、`.eps` 等），不要硬写 `.jpg`
+- 事实内容必须来自论文原文；审阅判断与延伸想法必须和事实部分区分清楚
+- **段落与列表的选择**（重要）：**有因果、转折、论证关系的内容必须写成连贯段落；只有并列可枚举的事实才用列表或表格**
+  - 该用段落的：研究背景与动机、核心挑战的成因、方法的设计动机与工作原理、模块之间的关系、审阅论证、结果解读
+  - 该用列表/表格的：超参数、数据集清单、实验数字、消融对比、指标定义、检查项、行动清单
+  - 写段落时保留"因为、所以、然而、于是"这类逻辑连接词，不要把一条因果链拆成多个并列条目
+  - 段落里可以用**加粗短语**开头引导视线，但不要为了排版把段落退化回列表
+- **使用 Obsidian callout（admonition）提升笔记可读性**，见下方"Callout 使用规范"
+- 若论文类型为 `ambiguous`，优先使用综述 / 模糊类型模板，避免强行套入“单一新方法”结构
+- “方法介绍”默认不是摘要页，而是详细技术页；正常情况下应明显长于简报，并足以支持复现主流程、讲清关键贡献和解释模块关系
+- 除简报外，其余笔记默认都应比“摘要级”更扎实：主笔记要能充当入口页，实验页要说明证据边界，审阅页要接近正式评审，灵感页要接近研究计划
+- 若 Source Bundle 含 `images/`，可在笔记中插入 1 至 3 张真正关键的原论文图片；优先选择方法框架图、主结果图、关键消融图或定性可视化图
+- 插图必须使用当前论文目录下的真实相对路径，例如 `![[images/<filename>.jpg]]`
+- 每张插图下方都要补一行简短说明：图号/用途/这张图说明了什么
+- 不要机械插入所有 MinerU 导出的图片；只有“帮助理解方法或结果”的图才值得保留
+- **AI 示意图(可选,gpt-image-2 MCP,见 process.md Step 4A)**:仅当 MCP 可用时,可在 `方法介绍`(方法流程图)、`主笔记/简报`(概念图)、综述 `taxonomy`(分类树)等处插 1–3 张**示意/流程/概念图**辅助理解。**红线**:只画忠于原文描述的示意图,**严禁**画成像真实实验结果的数据图或冒充论文原图;**严禁**在 `实验结果` 页生成结果图;每张必须存到 `assets/`、用 `![[assets/<文件名>]]` 嵌入,并紧跟图注 `> 🤖 AI 生成示意图(非论文原图),仅辅助理解,以原文为准。`。这与"插入论文原图用 `images/`"是两类,不要混。
+- **视觉产物 / NotebookLM 链接初稿一律留空,Step 9 验证存在后再回填(总规,适用所有模板)**:任何模板里出现的 `banner: "<File Stem>_infographic_zh.png"`、正文嵌入 `![[<File Stem>_infographic_zh.png]]` / `![[<File Stem>_slides_zh.pdf]]`、以及指向 `NotebookLM简报/博文` 的链接,都视为**待回填占位**——初稿应留空 banner、省略这些嵌入与链接,**绝不在产物存在前落地它们**,以免留下死链。只有 Step 9 验证对应文件确实存在后,才把 banner 与正文嵌入/链接补上。视觉任务若 `blocked`,则永久不回填(确定性门禁 `validate_notes.py` 会拦截 blocked 后仍残留的视觉链接)。
+## Callout 使用规范
+
+在笔记正文中适当使用 Obsidian callout（`> [!type]` 语法）来标记关键信息、区分事实与判断、突出注意事项。不要滥用——callout 是为了让读者快速抓住重点，不是给每段话都加框。
+
+### 语法
+
+```markdown
+> [!type] 可选标题
+> 内容，可以多行。
+> 支持 **Markdown** 和 $公式$。
+```
+
+折叠式（默认收起）：
+
+```markdown
+> [!type]- 可选标题
+> 内容默认折叠，点击展开。
+```
+
+### 推荐使用的 callout 类型
+
+| 类型 | 语法 | 用途 | 典型场景 |
+|------|------|------|---------|
+| 摘要 | `> [!abstract]` | 关键结论、核心发现的浓缩 | 主笔记的一句话定位；简报的核心结论 |
+| 提示 | `> [!tip]` | 实用建议、复现要点、阅读提示 | 方法介绍的复现关键点；灵感页的行动建议 |
+| 警告 | `> [!warning]` | 局限、陷阱、容易误读的地方 | 实验结果的证据不足处；审阅的关键缺陷 |
+| 疑问 | `> [!question]` | 未解答的问题、需要进一步确认的点 | 方法中没讲清的部分；审阅中的开放问题 |
+| 引用 | `> [!quote]` | 论文原文的重要直接引述 | 论文中特别关键的一段话原文 |
+| 信息 | `> [!info]` | 补充背景、术语解释、上下文说明 | 方法介绍中的背景知识补充 |
+| 成功 | `> [!success]` | 已验证的结论、实验支持的观点 | 实验结果中确实被证实的发现 |
+| 危险 | `> [!danger]` | 严重问题、不可忽视的风险 | 审阅中的根本性缺陷；复现时的致命陷阱 |
+| 示例 | `> [!example]` | 具体案例、实例说明 | 方法页中的具体计算示例 |
+| 笔记 | `> [!note]` | 个人备注、阅读时的旁注 | 任何页面中值得标记的个人观察 |
+
+### 使用原则
+
+1. **每份笔记建议使用 2–5 个 callout**，不要每个段落都用
+2. **优先用于区分事实与判断**：论文原文事实用普通正文；你的审阅判断或延伸想法用 `> [!warning]` 或 `> [!note]` 框起来，让读者一眼分清
+3. **关键结论用 `> [!abstract]`**：每份笔记中最值得记住的 1–2 条结论
+4. **复现风险用 `> [!warning]` 或 `> [!danger]`**：方法页和实验页中容易踩坑的地方
+5. **开放问题用 `> [!question]`**：论文没解答清楚的点，比直接写在正文里更醒目
+6. **长段补充信息可用折叠式**：`> [!info]- 展开查看详情` 避免打断主线阅读
+
+### 各笔记推荐用法
+
+| 笔记 | 推荐 callout |
+|------|-------------|
+| 主笔记 | `[!abstract]` 一句话定位；`[!tip]` 阅读建议 |
+| 简报 | `[!abstract]` 核心结论；`[!warning]` 主要局限 |
+| 方法介绍 | `[!tip]` 复现关键点；`[!question]` 论文没讲清的部分；`[!info]-` 折叠式背景补充 |
+| 实验结果 | `[!success]` 已验证结论；`[!warning]` 证据不足处；`[!question]` 缺失的实验 |
+| 审阅建议 | `[!danger]` 根本性缺陷；`[!warning]` 可修复问题；`[!success]` 突出优点 |
+| 后续灵感 | `[!tip]` 最值得优先做的方向；`[!example]` 具体实验设计 |
+
+- 若 `notebooklm` CLI 可用，除模板生成的 6 份笔记外，还应额外生成两份 NotebookLM Markdown（**两步法**,完整命令契约见 `process.md` Step 7）：
+  - 先生成:`notebooklm generate report --format briefing-doc -n <notebook_id> --language zh_Hans --wait`(博文用 `--format blog-post`)
+  - 再取正文:`notebooklm download report --all <临时目录>/ -n <notebook_id> --force --json`（⚠️ `generate report` 不返回正文,正文必须用 `download report` 取）
+  - briefing-doc → `[File Stem]-NotebookLM简报.md`;blog-post → `[File Stem]-NotebookLM博文.md`(按返回 JSON 的 `artifacts[].title` 映射)
+- 这两份 NotebookLM 产物也必须补齐合法 frontmatter，并将 `parentNote` 指向主笔记
+- 若当前仓库包含 `notes-web/`，网页应把这两个文件识别为独立 tab，标签分别为：
+  - `NotebookLM 简报`
+  - `NotebookLM 博文`

@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.DS_Store
+# 本地配置不入库（应放 ~/.config/paper-reading/ 或 vault）
+paper_setting.json
