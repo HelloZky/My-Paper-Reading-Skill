@@ -106,6 +106,26 @@
    - 典型可视化结果图
 8. 重要图只在确实有助于理解时插入对应笔记,不要把 MinerU 导出的所有图片或 TeX 源码中的所有 figure 都塞进笔记
 
+### 1d. 仅有 PDF 时:优先尝试 PDF→Markdown 转换(可选,显著提质)
+
+当 Source Bundle **只有 PDF**(常见于 Zotero 条目仅含 Full Text PDF、无 tex/full.md/html)时:直接读 PDF 虽可用,但**公式、表格、多栏版面、图文映射容易丢失或串行**。因此**先探测本机是否装了 PDF→Markdown 工具**,有就把 PDF 转成一份 `full.md`(+ 可能的 `images/`),再按上面的 `full.md` 优先级读取;**没有任何工具则降级到内置 PDF 读取**(用 Read 工具直接读 PDF),不阻塞。
+
+1. **配置优先**:若配置解析(Step 2 / `resolve_config.py`)给出了 `pdf2md` 命令,优先用它(命令里用 `{pdf}` / `{outdir}` 占位,如 `mineru -p {pdf} -o {outdir}`)。
+2. **否则按优先级自动探测**(`command -v <名>` 命中即用;**学术论文首选 MinerU**——公式/表格/图都还原得好):
+
+   | 工具 | 探测 | 典型用法 | 适合 |
+   |---|---|---|---|
+   | **MinerU** | `command -v mineru || command -v magic-pdf` | `mineru -p "<pdf>" -o "<outdir>"`(旧版 `magic-pdf -p <pdf> -o <outdir>`) | 学术论文(公式/表格/图),**首选** |
+   | **marker** | `command -v marker_single` | `marker_single "<pdf>" "<outdir>"` | 通用论文,质量高 |
+   | **markitdown** | `command -v markitdown` | `markitdown "<pdf>" > "<outdir>/full.md"` | 通用文档,轻量 |
+   | **pymupdf4llm** | `python3 -c "import pymupdf4llm"` | `python3 -c "import pymupdf4llm,sys; open(sys.argv[2],'w').write(pymupdf4llm.to_markdown(sys.argv[1]))" "<pdf>" "<outdir>/full.md"` | pip 即装,无需 CLI |
+
+3. **转换产物落到该论文目录的临时子目录**(如 `<论文目录>/_src_md/`),把生成的 markdown 当 `full.md`、生成的图片目录当 `images/` 接入后续流程。
+4. ⚠️ **转换有 OCR/解析误差**:数字、公式、符号仍以 **PDF 原文交叉核对**为准(沿用第 5 点的 provenance 规则);把"用了哪个工具转换 / 还是直接读 PDF"记入 `plan.md`。
+5. 探测/转换失败 → 在 `plan.md` 失败日志记一条(缺失类型: 工具),改用内置 PDF 读取,继续不阻塞。
+
+> 提示:这些工具都不随本 skill 分发(体积大/依赖重)。建议在 `INSTALL.md` 按需安装其一(MinerU 对中文学术 PDF 友好)。
+
 选择领域内分类时:
 
 1. 优先复用该研究方向目录下已有的子目录命名
@@ -115,7 +135,7 @@
 
 ## Step 2 — 解析配置与探测可选依赖(配置与 skill 解耦)
 
-**配置不写死在 skill 里**,而是分层解析(全局兜底 + vault 覆盖 + 环境变量)。支持字段:`output_root`、`python`、`paper_py`、`notebooklm_cli`。
+**配置不写死在 skill 里**,而是分层解析(全局兜底 + vault 覆盖 + 环境变量)。支持字段:`output_root`、`python`、`paper_py`、`notebooklm_cli`、`pdf2md`(PDF→Markdown 自定义命令,含 `{pdf}`/`{outdir}` 占位;见 Step 1d)。
 
 **优先用脚本做确定性解析**(纯标准库;它会打印每个字段来自哪一层 + 告警):
 

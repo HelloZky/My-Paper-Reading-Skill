@@ -63,3 +63,5 @@ fi
 **附件中可能存在多个同类型文件**(如多个 HTML snapshot):优先选择文件名或 title 中包含论文标题关键词的那个;若无法区分,按数组顺序取第一个。
 
 **完成附件映射后**,合并进入标准的源文件优先级和交叉核对流程(与 process.md 1b 相同),继续 Step 1 的"抽取并记录信息 / 选研究方向 / 读取细则"。
+
+> 常见情况:Zotero 条目**只有 Full Text PDF**(无 tex/html)。此时**先看 process.md 的 1d 节**——优先探测 MinerU / marker / markitdown / pymupdf4llm 把 PDF 转成 `full.md`(+ `images/`)再读,质量明显更好;没有任何工具才降级到内置 PDF 读取。

@@ -11,7 +11,10 @@
   3. 当前工作目录:./paper_setting.json   ← vault 覆盖(从 vault 目录运行时)
   4. 全局配置:~/.config/paper-reading/paper_setting.json   ← 全局兜底
   5. 内置兜底:output_root→当前目录(显式告警,不静默);python→"python3";
-       paper_py→无(视觉方法B blocked);notebooklm_cli→"notebooklm"(PATH 查找)
+       paper_py→无(视觉方法B blocked);notebooklm_cli→"notebooklm"(PATH 查找);
+       pdf2md→无(改用自动探测 MinerU/marker/markitdown/pymupdf4llm)
+
+字段:output_root / python / paper_py / notebooklm_cli / pdf2md(均可选)。
 
 用法:
   python3 resolve_config.py [--cwd <dir>] [--json]
@@ -20,12 +23,13 @@
 """
 import os, sys, json
 
-FIELDS = ["output_root", "python", "paper_py", "notebooklm_cli"]
+FIELDS = ["output_root", "python", "paper_py", "notebooklm_cli", "pdf2md"]
 ENV = {
     "output_root": "PAPER_READING_OUTPUT_ROOT",
     "python": "PAPER_READING_PYTHON",
     "paper_py": "PAPER_READING_PAPER_PY",
     "notebooklm_cli": "PAPER_READING_NOTEBOOKLM_CLI",
+    "pdf2md": "PAPER_READING_PDF2MD",
 }
 
 
@@ -93,6 +97,8 @@ def main():
         cfg["notebooklm_cli"] = "notebooklm"; prov["notebooklm_cli"] = "fallback(PATH)"
     if not cfg.get("paper_py"):
         cfg["paper_py"] = None; prov["paper_py"] = "fallback(无,视觉方法B blocked)"
+    if not cfg.get("pdf2md"):
+        cfg["pdf2md"] = None; prov["pdf2md"] = "fallback(无,改用自动探测 MinerU/marker/markitdown/pymupdf4llm)"
 
     out = dict(cfg)
     out["_provenance"] = prov
