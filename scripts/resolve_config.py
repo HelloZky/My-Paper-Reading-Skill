@@ -12,7 +12,7 @@
   4. 全局配置:~/.config/paper-reading/paper_setting.json   ← 全局兜底
   5. 内置兜底:output_root→当前目录(显式告警,不静默);python→"python3";
        paper_py→无(视觉方法B blocked);notebooklm_cli→"notebooklm"(PATH 查找);
-       pdf2md→无(改用自动探测 MinerU/marker/markitdown/pymupdf4llm)
+       pdf2md→无(改用自动探测 mineru-open-api CLI;见 Step 1d)
 
 字段:output_root / python / paper_py / notebooklm_cli / pdf2md(均可选)。
 
@@ -98,7 +98,7 @@ def main():
     if not cfg.get("paper_py"):
         cfg["paper_py"] = None; prov["paper_py"] = "fallback(无,视觉方法B blocked)"
     if not cfg.get("pdf2md"):
-        cfg["pdf2md"] = None; prov["pdf2md"] = "fallback(无,改用自动探测 MinerU/marker/markitdown/pymupdf4llm)"
+        cfg["pdf2md"] = None; prov["pdf2md"] = "fallback(无,改用自动探测 mineru-open-api CLI)"
 
     out = dict(cfg)
     out["_provenance"] = prov

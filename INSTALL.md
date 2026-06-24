@@ -24,7 +24,7 @@ paper-reading/
 | **PyYAML**(`pip install pyyaml`) | 可选 | QA 门禁严格校验 frontmatter YAML | 缺则降级为保守检查 |
 | **notebooklm-py**(`uv tool install "notebooklm-py[browser]"` 后 `notebooklm login`) | 可选 | 生成 NotebookLM 简报/博文 + slides/infographic | 缺则跳过这些,只出 Markdown 笔记 |
 | **gpt-image-2 MCP**(见下) | 可选 | 给笔记生成 AI 示意图/流程图(方法流程图等) | 未注册则跳过,笔记不插 AI 图 |
-| **PDF→Markdown 工具**(见 §5B) | 可选 | 仅有 PDF(无 tex/html)时转出结构化文本,提升公式/表格/版面质量 | 缺则降级为内置直接读 PDF |
+| **MinerU CLI `mineru-open-api`**(见 §5B) | 可选 | 仅有 PDF(无 tex/html)时转出结构化文本,提升公式/表格/版面质量 | 缺则降级为内置直接读 PDF |
 | **Marp CLI / Obsidian Marp 插件** | 可选 | 把生成的 `-marp.md` 导出 pptx/pdf | 缺则 `-marp.md` 仍生成,只是不自动导出 |
 | **Obsidian** | 可选 | 浏览生成的笔记(笔记就是普通 Markdown) | 用任意编辑器也能看 |
 
@@ -108,24 +108,28 @@ cd gpt-image-2-mcp && pnpm install && pnpm run build   # 产出 build/index.js
 > `OPENAI_BASE_URL` 仅在用代理/自建网关时需要;官方 API 可省略。注册后重启 Claude Code,skill 检测到 `mcp__gpt-image-2__generate_image` 即会在合适位置(方法流程图等)生成 AI 示意图。
 > ⚠️ 注意:① 该模型按量计费(非免费,除非你用自建网关);② AI 图仅为**示意/流程图**且会标注"🤖 AI 生成",**不会**生成冒充论文实验结果的数据图。
 
-## 5B. 可选:安装 PDF→Markdown 工具(仅有 PDF 时提质)
+## 5B. 可选:安装 MinerU CLI(仅有 PDF 时提质)
 
-当论文只有 PDF(典型:Zotero 条目仅含 Full Text PDF)时,装其一即可把 PDF 转成结构化 `full.md`(+ 图片),比直接读 PDF 更准(尤其公式、表格、多栏版面)。**学术论文首选 MinerU**。
+当论文只有 PDF(典型:Zotero 条目仅含 Full Text PDF)时,用 [MinerU CLI `mineru-open-api`](https://github.com/opendatalab/MinerU-Ecosystem) 把 PDF 转成结构化 `full.md`(+ 图片),比直接读 PDF 更准(尤其公式、表格、多栏版面、中文)。skill 会**自动探测 `mineru-open-api`** 并使用,默认就用它。
 
-| 工具 | 安装 | 调用 | 适合 |
-|---|---|---|---|
-| [MinerU](https://github.com/opendatalab/MinerU) | `pip install -U "mineru[core]"` | `mineru -p paper.pdf -o outdir` | 学术论文(公式/表格/图),中文友好,**首选** |
-| [marker](https://github.com/VikParuchuri/marker) | `pip install marker-pdf` | `marker_single paper.pdf outdir` | 通用论文,质量高 |
-| [markitdown](https://github.com/microsoft/markitdown) | `pip install markitdown` | `markitdown paper.pdf > full.md` | 通用文档,轻量 |
-| [pymupdf4llm](https://github.com/pymupdf/RAG) | `pip install pymupdf4llm` | python 一行转 markdown | pip 即装,最轻量 |
-
-skill 会**自动探测**上述工具并使用;若你的命令特殊,可在 `paper_setting.json` 设 `pdf2md`(用 `{pdf}`/`{outdir}` 占位),例如:
-
-```json
-{ "pdf2md": "mineru -p {pdf} -o {outdir}" }
+```bash
+npm install -g mineru-open-api          # 或 go install ...mineru-open-api@latest
+mineru-open-api auth                     # 配 token(解锁 extract 完整模式;flash-extract 免 token)
+mineru-open-api version                  # 验证
 ```
 
-> 都不装也没关系:skill 会降级为内置直接读取 PDF。
+- **`extract`**(需 token):保留图表/公式、可多格式、批量 —— skill 默认用它。
+- **`flash-extract`**(免 token):仅 markdown、≤10MB/20页 —— 无 token 时的兜底。
+- ⚠️ **走云端 API**(文档上传 MinerU 服务器解析)。
+- ⚠️ **国内代理(Clash 等)务必把 `openxlab.org.cn` 设为直连**,否则结果文件从 openxlab CDN 下载会被 TLS 重置(表现为 `download ... EOF` / `SSL_ERROR_SYSCALL`)。
+
+想换别的转换工具(marker / markitdown / 纯本地 `pymupdf4llm` 等,或介意云端上传),在 `paper_setting.json` 设 `pdf2md`(`{pdf}`/`{outdir}` 占位)即可覆盖默认:
+
+```json
+{ "pdf2md": "mineru-open-api extract {pdf} -o {outdir}" }
+```
+
+> 不装也没关系:skill 会降级为内置直接读取 PDF。
 
 ## 6. 常见问题
 

@@ -64,4 +64,4 @@ fi
 
 **完成附件映射后**,合并进入标准的源文件优先级和交叉核对流程(与 process.md 1b 相同),继续 Step 1 的"抽取并记录信息 / 选研究方向 / 读取细则"。
 
-> 常见情况:Zotero 条目**只有 Full Text PDF**(无 tex/html)。此时**先看 process.md 的 1d 节**——优先探测 MinerU / marker / markitdown / pymupdf4llm 把 PDF 转成 `full.md`(+ `images/`)再读,质量明显更好;没有任何工具才降级到内置 PDF 读取。
+> 常见情况:Zotero 条目**只有 Full Text PDF**(无 tex/html)。此时**先看 process.md 的 1d 节**——优先用 MinerU CLI(`mineru-open-api`)把 PDF 转成 `full.md`(+ `images/`)再读,质量明显更好;未装则降级到内置 PDF 读取。
