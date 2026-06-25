@@ -133,19 +133,25 @@ def main():
 
     errs, warns = [], []
 
-    # 读 plan.md,判断视觉 / NotebookLM 报告产物是否已 blocked/skipped(blocked 则主笔记不应再链向它)
+    # 读 plan.md 的「任务状态表」判断视觉 / NotebookLM 报告是否 blocked/skipped。
+    # 只解析状态表的 markdown 行(精确任务名 + 状态格),不再用整行关键词粗判,
+    # 避免失败日志等自由文本里的"视觉/NotebookLM"字样造成误判。
     visuals_blocked = False
     reports_blocked = False
     plan = os.path.join(d, "plan.md")
     if os.path.isfile(plan):
-        ptext = open(plan, encoding="utf-8").read()
-        for ln in ptext.splitlines():
-            low = ln.lower()
-            if "blocked" not in low and "skipped" not in low:
+        for ln in open(plan, encoding="utf-8").read().splitlines():
+            if "|" not in ln:
                 continue
-            if "视觉" in ln or "visuals" in low:
+            cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+            if len(cells) < 2:
+                continue
+            task, status = cells[0].lower(), cells[1].lower()
+            if status not in ("blocked", "skipped"):
+                continue
+            if task.startswith("visuals"):                 # visuals_started / visuals_done
                 visuals_blocked = True
-            if "notebooklm" in low or "报告" in ln or "简报" in ln or "博文" in ln:
+            if "notebooklm_reports" in task:               # notebooklm_reports_started / _done
                 reports_blocked = True
 
     # 1) 必需套件文件存在(6 笔记 + marp)

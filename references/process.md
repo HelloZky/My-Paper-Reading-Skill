@@ -106,9 +106,11 @@
    - 典型可视化结果图
 8. 重要图只在确实有助于理解时插入对应笔记,不要把 MinerU 导出的所有图片或 TeX 源码中的所有 figure 都塞进笔记
 
-### 1d. 仅有 PDF 时:优先尝试 PDF→Markdown 转换(可选,显著提质)
+### 1d. 仅有 PDF 时:PDF→Markdown 转换(硬门禁:有工具必须先转)
 
-当 Source Bundle **只有 PDF**(常见于 Zotero 条目仅含 Full Text PDF、无 tex/full.md/html)时:直接读 PDF 虽可用,但**公式、表格、多栏版面、图文映射容易丢失或串行**。因此**优先用 MinerU CLI(`mineru-open-api`)把 PDF 转成 `full.md`(+ `images/`)**,再按上面的 `full.md` 优先级读取;**没有该工具则降级到内置 PDF 读取**(用 Read 工具直接读 PDF),不阻塞。
+当 Source Bundle **只有 PDF**(常见于 Zotero 条目仅含 Full Text PDF、无 tex/full.md/html)时:直接读 PDF 虽可用,但**公式、表格、多栏版面、图文映射容易丢失或串行**。
+
+> 🔒 **硬门禁(不是"可选")**:只要 `pdf2md` 或 `mineru-open-api` **可用**,就**必须先用它把 PDF 转成 `full.md`(+ `images/`)作为主要 full_md 来源**,再按上面的 `full.md` 优先级读取。**严禁**把 `pdftotext` / 内置直读 PDF 的结果当作主 full_md——它们只能用作"交叉核对 / 转换失败时的兜底"。**只有当 `pdf2md` 与 `mineru-open-api` 都不可用、或转换确实失败时**,才降级到内置 PDF 读取,并在 `plan.md` 失败日志写明原因。把"用 MinerU 转换 / 还是降级直读"明确记入 `plan.md`。
 
 1. **配置优先**:若配置解析(Step 2 / `resolve_config.py`)给出了 `pdf2md` 命令,优先用它(命令里用 `{pdf}` / `{outdir}` 占位)。这也是想换成别的转换工具(marker / markitdown / 本地 pymupdf4llm 等)时的唯一开关——本流程默认只用 MinerU CLI。
 2. **否则探测 MinerU CLI**(`command -v mineru-open-api` 命中即用):
@@ -304,25 +306,35 @@ python3 <skill根>/scripts/validate_notes.py "<论文输出目录>" "<File Stem>
 
 任一检查项不通过 → 修正后重跑,不允许带病勾选。QA 全部通过后,勾选 `markdown_done`,并在失败日志记录本轮 QA 修正了什么(若有)。
 
-## Step 7 — 生成 NotebookLM 扩展报告(可选)
+## Step 7 — 生成 NotebookLM 扩展报告(可用即默认执行)
 
-> 若 `notebooklm` CLI 可用,**读 `references/notebooklm.md`** 按其两步法(`generate report --wait` → `download report --all`)生成简报/博文,并按那里的 notebook 建立步骤、命令契约与降级规则执行。CLI 不可用则跳过、记失败日志,不阻塞其余流程。
+> 🔒 **默认执行,不是"想做才做"**:只要 `notebooklm_cli` **可用且认证有效、且用户没有显式拒绝**,就**必须执行** Step 7——**读 `references/notebooklm.md`** 按其两步法(`generate report --wait` → `download report --all`)生成简报/博文。
+> **不能因为它"可选"就跳过**;真要跳过,必须在 `plan.md` 失败日志写明具体原因(如"CLI 不可用 / 认证失效 / 用户显式拒绝"),并把 `notebooklm_reports_done` 标 `skipped`(而非装作完成)。CLI 不可用时不阻塞其余流程。
 
-## Step 8 — 启动视觉材料任务(可选)
+## Step 8 — 启动视觉材料任务(可用即默认执行)
 
-按 `references/templates/paper-visuals.md` 生成中文 Slide deck 与 Infographic:
+按 `references/templates/paper-visuals.md` 生成中文 Slide deck 与 Infographic。
 
-1. 优先使用 `notebooklm` CLI 直接生成(方法 A)
-2. 若 CLI 不可用,回退到 `paper.py` 脚本(方法 B)
-3. 成功启动后勾选 `visuals_started`
-4. 立即向用户汇报 Markdown 已完成,不等待视觉任务结束
+> 🔒 **方法判定断言(别再搞错)**:
+> - **方法 A = `notebooklm` CLI(首选,不依赖 paper.py)**;**方法 B = `paper.py`(仅回退)**。
+> - **`notebooklm_cli` 可用 → 绝不能因为 `paper_py` 缺失/不可用而把视觉标 `blocked`**。`paper.py` 只在 NotebookLM 不可用时才考虑。
+> - **只有当方法 A、B 都不可用时**,才允许标 `blocked`。
+
+> 🔒 **视觉是一个原子套件:slide-deck + infographic 必须都做**:
+> - 默认**同时**尝试生成 **slide-deck 和 infographic**(同一个 notebook,内联 `-n`)。
+> - **只完成其中一个 → 状态是 `running`/`partial`,绝不能置 `visuals_done`**。两者都下载落盘并校验通过,才置 `visuals_done`。
+> - 用户单独追问其中一个(如只问信息图)时,补完它之后**仍要顺手把另一个补齐**,别让套件半成品。
+
+1. 优先用 `notebooklm` CLI 直接生成(方法 A);CLI 不可用且 `paper.py` 可用时才用方法 B
+2. 成功启动后置 `visuals_started`
+3. 立即向用户汇报 Markdown 已完成,不等待视觉任务结束;视觉完成情况单独追踪
 
 注意:
 
 - 视觉材料仍以 PDF 为输入;`tex` / `full.md` / `html` 只用于笔记内容抽取,不替代 NotebookLM 的 PDF source
 - 调用外部脚本/CLI 时锁定版本、限定在论文工作目录内操作;不要执行 `curl ... | bash` 之类直喂 shell 的命令
 
-若两种方法均不可用:
+若方法 A、B **均不可用**:
 
 - 在 `plan.md` 中把视觉任务标为 `blocked`,写入失败日志并记录原因
 - **处理永久断链**:此时主笔记的 `banner` 应留空(或不写该字段),正文不要嵌入尚不存在的 `_infographic_zh.png` / `_slides_zh.pdf`,以免留下永久死链。视觉产物相关的 banner 与嵌入,统一等 Step 9 验证产物真实存在后再补写。
