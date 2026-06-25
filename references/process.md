@@ -11,7 +11,7 @@
 1. **外化状态(治失忆)**:LLM 跨会话会"失忆",但本任务有状态(已做什么、为什么、下一步、目标)。因此 `plan.md` 是这篇论文的**唯一真相来源**:每完成一步就回写,任何新会话只要读 `plan.md` 就能无损接手。把有状态的大任务,拆成一串"读状态 → 做一件事 → 验证 → 写状态"的近似无状态操作。
 2. **硬门禁(治过早胜利)**:模型天生倾向"看起来做完了就宣布完成"。所以质量靠**确定性验证门禁**兜底(Step 6 / Step 9),而不是靠自觉:门禁不过,对应状态位不准勾。
 3. **失败即信号(治静默退化)**:每次缺工具、缺源文件、判不准类型,都写进 `plan.md` 的「失败日志」,记清楚缺了什么、改用了什么兜底。这是给用户改进 harness 的信号,不是噪音。
-4. **优雅降级(治脆断)**:任何可选依赖(`paper.py` / NotebookLM / 视觉)缺失,都**不得阻塞 Markdown 产出**。核心(笔记)必须永远能交付。
+4. **优雅降级(治脆断)**:任何可选依赖(MinerU / NotebookLM / 视觉 / gpt-image-2)缺失,都**不得阻塞 Markdown 产出**。核心(笔记)必须永远能交付。
 
 ## 用户触发方式
 
@@ -135,7 +135,7 @@
 
 ## Step 2 — 解析配置与探测可选依赖(配置与 skill 解耦)
 
-**配置不写死在 skill 里**,而是分层解析(全局兜底 + vault 覆盖 + 环境变量)。支持字段:`output_root`、`python`、`paper_py`、`notebooklm_cli`、`pdf2md`(PDF→Markdown 自定义命令,含 `{pdf}`/`{outdir}` 占位;见 Step 1d)。
+**配置不写死在 skill 里**,而是分层解析(全局兜底 + vault 覆盖 + 环境变量)。支持字段:`output_root`、`python`、`notebooklm_cli`、`pdf2md`(PDF→Markdown 自定义命令,含 `{pdf}`/`{outdir}` 占位;见 Step 1d)。
 
 **优先用脚本做确定性解析**(纯标准库;它会打印每个字段来自哪一层 + 告警):
 
@@ -146,13 +146,13 @@ python3 <skill根>/scripts/resolve_config.py --cwd "<当前工作目录>" --json
 
 **优先级(字段级合并,高者覆盖低者;未给字段由低层兜底)**:
 
-1. **环境变量(最高)**:`PAPER_READING_OUTPUT_ROOT` / `PAPER_READING_PYTHON` / `PAPER_READING_PAPER_PY` / `PAPER_READING_NOTEBOOKLM_CLI`
+1. **环境变量(最高)**:`PAPER_READING_OUTPUT_ROOT` / `PAPER_READING_PYTHON` / `PAPER_READING_PDF2MD` / `PAPER_READING_NOTEBOOKLM_CLI`
 2. **显式文件**:`PAPER_READING_CONFIG=/abs/path.json`(作为文件层的最高一层参与**字段级合并**,不会丢弃低层已有字段)
 3. **vault 覆盖**:当前工作目录的 `./paper_setting.json`(从 Obsidian vault 目录运行时生效)
 4. **全局兜底**:`~/.config/paper-reading/paper_setting.json`(一台机器一份,装到 `~/.claude/skills/` 全局用也成立)
 5. **内置兜底**:见下
 
-> 字段级合并:每层只覆盖它**实际提供**的字段,未提供的字段继续由低层兜底。例如显式文件只写了 `output_root`,则 `python`/`paper_py` 仍由全局/cwd 提供。损坏或非对象的配置文件会被忽略并记入 `_warnings`,不静默吞。
+> 字段级合并:每层只覆盖它**实际提供**的字段,未提供的字段继续由低层兜底。例如显式文件只写了 `output_root`,则 `python`/`notebooklm_cli` 仍由全局/cwd 提供。损坏或非对象的配置文件会被忽略并记入 `_warnings`,不静默吞。
 
 > 字段级合并示例:全局配 `python`+`output_root`,某个 vault 里只放一个写了 `output_root` 的 `paper_setting.json`,则该 vault 用自己的 `output_root`、`python` 仍由全局兜底。模板见 skill 内 `paper_setting.example.json`。
 
@@ -161,7 +161,7 @@ python3 <skill根>/scripts/resolve_config.py --cwd "<当前工作目录>" --json
 - `output_root` 缺失 → 回退当前工作目录,**但不得静默**:在 `plan.md` 环境探测段与最终汇报写明"output_root 未配置,已回退到 <绝对路径>";若当前目录明显不是论文库(如就是 skill 目录本身),先向用户确认
 - `python` 缺失 → 回退 `python3`
 - `notebooklm_cli` 缺失 → 回退 `notebooklm`(PATH 查找)
-- `paper_py` 未配置/找不到 → 视觉**方法 B** 不可用;若 `notebooklm` CLI 可用仍可走**方法 A**;两者皆无则把视觉标 `blocked` 并**写入失败日志**
+- `notebooklm_cli` 缺失/认证失效 → 视觉与报告(Step 7/8)不可用 → 标 `blocked`/`skipped` 并**写入失败日志**(不阻塞 Markdown 笔记)
 - 不要因为视觉依赖缺失而阻塞 Markdown 笔记产出
 
 > harness 提示:把 `resolve_config.py` 输出的 `_provenance`(每字段来源)与 `_warnings` 一并记入 `plan.md` 环境探测区——"配置从哪来、缺什么"都是给用户的信号。
@@ -196,15 +196,14 @@ python3 <skill根>/scripts/resolve_config.py --cwd "<当前工作目录>" --json
 - `category_path`
 - `method_category`
 - **provenance**:关键字段(标题/公式/数字/图号)各采信了哪个来源;冲突时谁胜出
-- **环境探测结果**:`paper.py` / `notebooklm` / `output_root` 是否可用
-- 若可用,写出将要执行的 **完整** `paper.py` 命令
-- 若不可用,明确写出视觉任务阻塞原因
+- **环境探测结果**:`notebooklm` CLI / `pdf2md`(或 `mineru-open-api`)/ `output_root` 是否可用
+- 若不可用,明确写出对应任务(报告/视觉/PDF 转换)阻塞或降级的原因
 - 任务清单(状态位)
 - **失败日志**(见下)
 
 任务状态用**状态枚举表**记录(见 `references/plan-template.md`),每个任务取值 `pending / running / done / blocked / skipped`:
 
-- 这样可以表达 `paper.py`/NotebookLM 缺失导致的 `blocked`,而不是用勾选框硬塞二值状态。
+- 这样可以表达 NotebookLM/视觉缺失导致的 `blocked`/`skipped`,而不是用勾选框硬塞二值状态。
 - `blocked` / `skipped` 必须在失败日志写明原因。
 - 同时维护 `current_step` / `next_action` / `updated_at` 三个指针,使中断后的新会话一眼知道"接着干什么"。
 
@@ -313,28 +312,22 @@ python3 <skill根>/scripts/validate_notes.py "<论文输出目录>" "<File Stem>
 
 ## Step 8 — 启动视觉材料任务(可用即默认执行)
 
-按 `references/templates/paper-visuals.md` 生成中文 Slide deck 与 Infographic。
-
-> 🔒 **方法判定断言(别再搞错)**:
-> - **方法 A = `notebooklm` CLI(首选,不依赖 paper.py)**;**方法 B = `paper.py`(仅回退)**。
-> - **`notebooklm_cli` 可用 → 绝不能因为 `paper_py` 缺失/不可用而把视觉标 `blocked`**。`paper.py` 只在 NotebookLM 不可用时才考虑。
-> - **只有当方法 A、B 都不可用时**,才允许标 `blocked`。
+按 `references/templates/paper-visuals.md` 生成中文 Slide deck 与 Infographic。**视觉材料统一用 `notebooklm` CLI 生成**(唯一路径)。
 
 > 🔒 **视觉是一个原子套件:slide-deck + infographic 必须都做**:
 > - 默认**同时**尝试生成 **slide-deck 和 infographic**(同一个 notebook,内联 `-n`)。
 > - **只完成其中一个 → 状态是 `running`/`partial`,绝不能置 `visuals_done`**。两者都下载落盘并校验通过,才置 `visuals_done`。
 > - 用户单独追问其中一个(如只问信息图)时,补完它之后**仍要顺手把另一个补齐**,别让套件半成品。
 
-1. 优先用 `notebooklm` CLI 直接生成(方法 A);CLI 不可用且 `paper.py` 可用时才用方法 B
-2. 成功启动后置 `visuals_started`
-3. 立即向用户汇报 Markdown 已完成,不等待视觉任务结束;视觉完成情况单独追踪
+1. 用 `notebooklm` CLI 生成(见 `paper-visuals.md`);成功启动后置 `visuals_started`
+2. 立即向用户汇报 Markdown 已完成,不等待视觉任务结束;视觉完成情况单独追踪
 
 注意:
 
 - 视觉材料仍以 PDF 为输入;`tex` / `full.md` / `html` 只用于笔记内容抽取,不替代 NotebookLM 的 PDF source
 - 调用外部脚本/CLI 时锁定版本、限定在论文工作目录内操作;不要执行 `curl ... | bash` 之类直喂 shell 的命令
 
-若方法 A、B **均不可用**:
+若 `notebooklm` CLI **不可用**(未装 / 认证失效):
 
 - 在 `plan.md` 中把视觉任务标为 `blocked`,写入失败日志并记录原因
 - **处理永久断链**:此时主笔记的 `banner` 应留空(或不写该字段),正文不要嵌入尚不存在的 `_infographic_zh.png` / `_slides_zh.pdf`,以免留下永久死链。视觉产物相关的 banner 与嵌入,统一等 Step 9 验证产物真实存在后再补写。

@@ -8,7 +8,7 @@
 - **确定性质量门禁**：`scripts/validate_notes.py` 机械校验 frontmatter、占位符、断链、AI 图红线，不通过不放行。
 - **状态外化**：每篇论文一个 `plan.md`（唯一真相来源 + provenance + 失败日志），中断可无损接手。
 - **配置与 skill 解耦**：分层解析（全局兜底 + vault 覆盖 + 环境变量），skill 内零机器路径。
-- **可选能力优雅降级**：NotebookLM CLI、gpt-image-2 MCP、`paper.py` 缺失都不阻塞核心笔记。
+- **可选能力优雅降级**：NotebookLM CLI、gpt-image-2 MCP、MinerU CLI 缺失都不阻塞核心笔记。
 - **递归渐进式披露**：精简 `SKILL.md` 入口 → `references/process.md` 主干 → 按需分支文件。
 
 ## 安装

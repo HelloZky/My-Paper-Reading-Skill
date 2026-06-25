@@ -5,15 +5,13 @@
 ## 执行顺序
 
 1. 先完成全部 7 个 Markdown 文件
-2. 再启动视觉材料生成（优先使用 `notebooklm` CLI，回退到 `paper.py`）
+2. 再用 `notebooklm` CLI 启动视觉材料生成(slide-deck + infographic,二者都做)
 3. 任务启动成功后即可向用户汇报 `markdown_done`
-4. 后续只有在产物真正落盘后，才能汇报 `visuals_done`
+4. 后续只有在 slide-deck 与 infographic **都真正落盘**后，才能置 `visuals_done`
 
-## 方法选择（按优先级）
+## 用 notebooklm CLI 生成
 
-### 方法 A — notebooklm CLI（推荐）
-
-直接调用 `notebooklm` CLI 完成全部流程，无需 `paper.py`。
+直接调用 `notebooklm` CLI 完成全部流程。
 
 前置条件：`notebooklm status` 或 `notebooklm list` 能正常返回（已认证）。
 
@@ -59,65 +57,14 @@
 - 若生成失败(rate limit),等 5–10 分钟后重试一次
 - 下载后必须校验文件真实存在且非空(PDF 以 `%PDF` 开头、PNG 以 PNG magic 开头)再置 `visuals_done`
 
-### 方法 B — paper.py 脚本（回退）
-
-仅当 `notebooklm` CLI 不可用或认证失败时使用。
-
-`paper.py` 会自动按 PDF 内容哈希匹配已有 notebook（标题格式 `paper_{hash}`），找到则复用，跳过创建和上传步骤。
-
-#### 基本用法
-
-```bash
-"<python>" "<paper_py>" "<absolute/path/to/paper.pdf>" \
-  --outdir "<absolute/path/to/paper-folder>" \
-  > "<absolute/path/to/paper-folder>/paper_visuals.log" 2>&1 &
-```
-
-#### 完整参数
-
-```text
-位置参数：
-  pdf                           论文 PDF 路径
-
-可选参数：
-  --outdir DIR                  输出目录（默认：notebooklm_outputs）
-  --title TITLE                 notebook 标题（默认：paper_{hash}，用于复用匹配）
-  --source-timeout SEC          等待 PDF 索引完成的超时秒数（默认 600）
-  --artifact-timeout SEC        等待 slide/infographic 生成完成的超时秒数（默认 3600）
-  --post-source-delay SEC       PDF source READY 后额外等待秒数（默认 120，传 0 跳过）
-  --no-slides                   跳过 slide deck 生成
-  --no-infographic              跳过 infographic 生成
-  --slides-name FILENAME        slides 输出文件名（默认：{pdf-stem}_slides_zh.pdf）
-  --infographic-name FILENAME   infographic 输出文件名（默认：{pdf-stem}_infographic_zh.png）
-```
-
-#### 典型调用示例
-
-```bash
-# 只生成 slides
-"<python>" "<paper_py>" paper.pdf --outdir ./out --no-infographic
-
-# 自定义输出文件名
-"<python>" "<paper_py>" paper.pdf --outdir ./out \
-  --slides-name "my_slides.pdf" \
-  --infographic-name "my_info.png"
-
-# 跳过索引等待（已有 notebook 会自动复用）
-"<python>" "<paper_py>" paper.pdf --outdir ./out --post-source-delay 0
-```
-
-配置来源:`<python>`、`<paper_py>` 等**统一来自 `scripts/resolve_config.py` 的解析结果**(见 process.md Step 2),不要在本分支自行搜索 `paper_setting.json` 或猜测路径。
-
 ## 配置来源
 
-所有路径(`python` / `paper_py` / `notebooklm_cli` / `output_root`)都用 process.md Step 2 的分层解析(`scripts/resolve_config.py`)取得;本文件只**消费**解析结果,不自行读配置文件。
+路径(`python` / `notebooklm_cli` / `output_root`)都用 process.md Step 2 的分层解析(`scripts/resolve_config.py`)取得;本文件只**消费**解析结果,不自行读配置文件。
 
 降级规则:
 
 - `notebooklm_cli` 缺失 → 由 resolve_config 回退 `notebooklm`(PATH 查找)
-- `notebooklm` CLI 认证失败 → 回退方法 B
-- `paper_py` 未配置/解析为空 → 方法 B 不可用(不要再去 cwd 猜 `paper.py`)
-- 若方法 A、B 均不可用 → 跳过视觉任务并在 `plan.md` 失败日志记为 `blocked`
+- `notebooklm` CLI **不可用或认证失效** → 视觉任务标 `blocked`,在 `plan.md` 失败日志写明原因;**不阻塞** Markdown 笔记产出
 
 ## 产物命名
 

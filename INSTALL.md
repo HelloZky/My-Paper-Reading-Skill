@@ -28,7 +28,7 @@ paper-reading/
 | **Marp CLI / Obsidian Marp 插件** | 可选 | 把生成的 `-marp.md` 导出 pptx/pdf | 缺则 `-marp.md` 仍生成,只是不自动导出 |
 | **Obsidian** | 可选 | 浏览生成的笔记(笔记就是普通 Markdown) | 用任意编辑器也能看 |
 
-> 注:原作者环境里的 `paper.py`(视觉生成的备用方案)、`notes-web/`(本地网页浏览)、Marp `blue` 主题**不随本 skill 分发**。视觉材料由 `notebooklm` CLI(方法 A)生成、不依赖 `paper.py`;Marp 主题缺失时自动回退 `theme: default`。
+> 注:`notes-web/`(本地网页浏览)、Marp `blue` 主题**不随本 skill 分发**。视觉材料统一由 `notebooklm` CLI 生成;Marp 主题缺失时自动回退 `theme: default`。
 
 ## 3. 安装位置(二选一)
 
@@ -39,11 +39,11 @@ paper-reading/
 
 skill 本身不含路径;配置按优先级解析(高覆盖低,字段级合并):
 
-1. 环境变量(最高):`PAPER_READING_OUTPUT_ROOT` / `PAPER_READING_PYTHON` / `PAPER_READING_PAPER_PY` / `PAPER_READING_NOTEBOOKLM_CLI`
+1. 环境变量(最高):`PAPER_READING_OUTPUT_ROOT` / `PAPER_READING_PYTHON` / `PAPER_READING_PDF2MD` / `PAPER_READING_NOTEBOOKLM_CLI`
 2. 显式文件:`PAPER_READING_CONFIG=/abs/path.json`
 3. **vault 覆盖**:从某目录运行时,该目录下的 `./paper_setting.json`
 4. **全局兜底**:`~/.config/paper-reading/paper_setting.json`
-5. 内置兜底:`output_root`→当前目录(会告警,不静默);`python`→`python3`;`notebooklm_cli`→`notebooklm`;`paper_py`→无(视觉方法B 不可用)
+5. 内置兜底:`output_root`→当前目录(会告警,不静默);`python`→`python3`;`notebooklm_cli`→`notebooklm`;`pdf2md`→无(自动探测 mineru-open-api)
 
 **最简单的做法**:把 `paper_setting.example.json` 改名为 `paper_setting.json`,填上自己的论文库路径,放到 `~/.config/paper-reading/`:
 
@@ -58,8 +58,8 @@ cp ~/.claude/skills/paper-reading/paper_setting.example.json ~/.config/paper-rea
 {
   "output_root": "/abs/path/to/你的Obsidian库/论文笔记",
   "python": "python3",
-  "paper_py": "",
-  "notebooklm_cli": "notebooklm"
+  "notebooklm_cli": "notebooklm",
+  "pdf2md": ""
 }
 ```
 

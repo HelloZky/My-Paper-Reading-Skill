@@ -58,12 +58,11 @@
 - python_version: "<`python3 --version` 输出 | 无法执行>"
 - config_provenance: "<resolve_config 的 _provenance:每字段来自 global/cwd/explicit/env/fallback 的哪一层>"
 - config_warnings: "<resolve_config 的 _warnings:如 output_root 回退告警、损坏配置文件告警 | 无>"
-- paper_py: "<可用路径 | 不可用>"
 - notebooklm_cli: "<可用 | 不可用>"
 - notebook_id: "<本论文使用的 NotebookLM notebook_id(报告与视觉共用,所有命令内联 -n)| 无>"
 - gpt_image_mcp: "<可用 | 不可用>"
 - ai_diagrams: "<已生成的 AI 示意图列表(assets/...)| 无>"
-- visuals_command: "<将要执行的完整 paper.py 命令 | 不可用,见失败日志>"
+- visuals_command: "<将要执行的 notebooklm generate slide-deck/infographic 命令 | 不可用,见失败日志>"
 
 ## 任务状态(状态枚举:`pending` / `running` / `done` / `blocked` / `skipped`)
 

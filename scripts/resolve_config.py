@@ -5,16 +5,16 @@
 优先级(字段级合并,高者覆盖低者;未给字段由低层兜底):
   1. 环境变量(最高):
        PAPER_READING_OUTPUT_ROOT / PAPER_READING_PYTHON /
-       PAPER_READING_PAPER_PY / PAPER_READING_NOTEBOOKLM_CLI
+       PAPER_READING_NOTEBOOKLM_CLI / PAPER_READING_PDF2MD
   2. 显式配置文件:$PAPER_READING_CONFIG 指向的 json(文件层最高优先级,按字段覆盖低层;
        未提供的字段继续从 cwd/global 继承,不取代低层)
   3. 当前工作目录:./paper_setting.json   ← vault 覆盖(从 vault 目录运行时)
   4. 全局配置:~/.config/paper-reading/paper_setting.json   ← 全局兜底
   5. 内置兜底:output_root→当前目录(显式告警,不静默);python→"python3";
-       paper_py→无(视觉方法B blocked);notebooklm_cli→"notebooklm"(PATH 查找);
+       notebooklm_cli→"notebooklm"(PATH 查找);
        pdf2md→无(改用自动探测 mineru-open-api CLI;见 Step 1d)
 
-字段:output_root / python / paper_py / notebooklm_cli / pdf2md(均可选)。
+字段:output_root / python / notebooklm_cli / pdf2md(均可选)。
 
 用法:
   python3 resolve_config.py [--cwd <dir>] [--json]
@@ -23,11 +23,10 @@
 """
 import os, sys, json
 
-FIELDS = ["output_root", "python", "paper_py", "notebooklm_cli", "pdf2md"]
+FIELDS = ["output_root", "python", "notebooklm_cli", "pdf2md"]
 ENV = {
     "output_root": "PAPER_READING_OUTPUT_ROOT",
     "python": "PAPER_READING_PYTHON",
-    "paper_py": "PAPER_READING_PAPER_PY",
     "notebooklm_cli": "PAPER_READING_NOTEBOOKLM_CLI",
     "pdf2md": "PAPER_READING_PDF2MD",
 }
@@ -95,8 +94,6 @@ def main():
         cfg["python"] = "python3"; prov["python"] = "fallback"
     if not cfg.get("notebooklm_cli"):
         cfg["notebooklm_cli"] = "notebooklm"; prov["notebooklm_cli"] = "fallback(PATH)"
-    if not cfg.get("paper_py"):
-        cfg["paper_py"] = None; prov["paper_py"] = "fallback(无,视觉方法B blocked)"
     if not cfg.get("pdf2md"):
         cfg["pdf2md"] = None; prov["pdf2md"] = "fallback(无,改用自动探测 mineru-open-api CLI)"
 
