@@ -32,6 +32,9 @@
    notebooklm source add "<absolute/path/to/paper.pdf>" -n <notebook_id> --json   # source_id 在 .source.id
    notebooklm source wait <source_id> -n <notebook_id> --timeout 300
    # ⚠️ source wait 在部分版本不存在/会报错;失败就固定等待约 60–90s 再继续
+   # ⚠️ 本地 PDF 卡在 SourceStatus.PREPARING(高频坑):source list -n <id> --json 查状态;
+   #    超过约 3 分钟仍 PREPARING → 删掉改用 URL 源(arXiv 最稳,通常秒级 READY):
+   #    notebooklm source add "https://arxiv.org/pdf/<arxiv_id>" --type url -n <id> --json
 
 4. 生成 slide-deck 并等待完成(--wait 阻塞到生成结束,无需单独的 artifact wait)
    notebooklm generate slide-deck -n <notebook_id> --wait --timeout 900
@@ -56,6 +59,7 @@
 - 若 `source wait` 子命令不存在或报错,改为固定等待约 60–90s 再继续
 - 若生成失败(rate limit),等 5–10 分钟后重试一次
 - 下载后必须校验文件真实存在且非空(PDF 以 `%PDF` 开头、PNG 以 PNG magic 开头)再置 `visuals_done`
+- **长时 `generate --wait` 断点续传**:视觉/报告生成一次要 5–15 分钟,若在**子 agent** 里跑,可能因会话额度/超时中断。**产物在服务器端不会丢**——换个会话用 `notebooklm artifact list -n <notebook_id> --json` 找到已 `completed` 的 artifact,再 `notebooklm download <slide-deck|infographic|report> -a <artifact_id> ... -n <notebook_id> --force` 直接下载补齐,不必重跑 `generate`。故:能在主线程跑就别丢给易断的子 agent;真断了就凭 `plan.md` 里的 `notebook_id` 断点续传。
 
 ## 配置来源
 

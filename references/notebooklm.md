@@ -17,6 +17,10 @@ notebooklm source wait <source_id> -n <notebook_id> --timeout 300   # 等索引;
 
 > 实测提示:`source wait` 在部分版本可能不存在/报错;**容错处理**——失败就改为固定等待约 60–90s 让索引完成,再继续;`generate ... --wait` 本身也会等到生成结束。`create`/`source add` 的 ID 字段是**嵌套**的(`notebook.id` / `source.id`),不要当成顶层 `id`。`auth check` 可先确认已登录。始终用内联 `-n <notebook_id>`,**不要**用全局 `notebooklm use`,以免批处理/并发串线。
 
+> ⚠️ **本地 PDF 卡在 `SourceStatus.PREPARING`(实测高频坑)**:本地 PDF 偶尔会在索引阶段长时间(数分钟以上)停在 `PREPARING` 不前进,导致后续 `generate` 一直空转。**排障顺序**:① 先 `source list -n <notebook_id> --json` 看该 source 的 status;② 若超过约 3 分钟仍是 `PREPARING`,**删掉它改用 URL 源**——对 arXiv 论文用 PDF 直链最稳:`notebooklm source add "https://arxiv.org/pdf/<arxiv_id>" --type url -n <notebook_id> --json`(URL 源通常秒级 `READY`);③ 无 arXiv/开放 URL 时,删掉重新 `source add` 本地 PDF 再等一轮。把"本地 PDF 卡 PREPARING → 改用 URL 源"记入 `plan.md` 失败日志。
+>
+> ⚠️ **语言码必须是 `zh_Hans`**(下划线,Hans 大写),**不是** `zh-CN`/`zh`;传错会报错或产出英文。可先 `notebooklm language set zh_Hans` 设一次默认。
+
 ## 真实命令契约(命令是 `generate report`,不是 `report`)
 
 > ⚠️ **关键坑(实测确认)**:`generate report --json` **只返回 `{task_id, status, url}`,不含报告正文**。直接把它的输出写进 `.md` 会得到一段无用的状态 JSON。**正文必须用 `download report` 单独取**(它把报告下成 markdown)。

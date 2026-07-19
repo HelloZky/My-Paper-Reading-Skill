@@ -28,6 +28,15 @@ VISUAL_PRODUCTS = re.compile(r"(_slides_zh|_infographic_zh)")
 NB_PRODUCTS = re.compile(r"(NotebookLM简报|NotebookLM博文)")
 PLACEHOLDER_SQUARE = re.compile(r"\[(?:Placeholder|placeholder|TODO|待填|占位)\]")
 
+
+def product_exists(d, ref):
+    """ref 可能是带扩展名的文件(如 <Stem>_slides_zh.pdf)或 md-wikilink 主名(无扩展名,
+    如 <Stem>-NotebookLM简报)。任一形式在目录里真实落盘即视为已存在。
+    用于:即便 plan.md 状态表还写着 blocked/skipped(过期状态),只要产物已在磁盘上,
+    指向它的链接/嵌入就不算死链——门禁以文件系统实况为准,不以过期文本为准。"""
+    return (os.path.isfile(os.path.join(d, ref))
+            or os.path.isfile(os.path.join(d, ref + ".md")))
+
 # 角度括号判定:区分"模板占位符"(要拦) vs "合法 HTML(marp)/NLP 特殊 token"(放行)
 _ANGLE = re.compile(r"<([^<>\n]{1,60})>")
 _HTML_TAGS = {
@@ -178,9 +187,9 @@ def main():
         for emb in re.findall(r"!\[\[([^\]]+)\]\]", text):
             tgt = strip_link_decoration(emb)
             if OPTIONAL_TARGETS.search(tgt):
-                if visuals_blocked and VISUAL_PRODUCTS.search(tgt):
+                if visuals_blocked and VISUAL_PRODUCTS.search(tgt) and not product_exists(d, tgt):
                     fail(errs, f"{name}: 视觉任务已 blocked,仍嵌入未生成的产物: {tgt}")
-                if reports_blocked and NB_PRODUCTS.search(tgt):
+                if reports_blocked and NB_PRODUCTS.search(tgt) and not product_exists(d, tgt):
                     fail(errs, f"{name}: NotebookLM 报告已 blocked,仍嵌入未生成的产物: {tgt}")
                 continue
             if (tgt.startswith("images/") or tgt.startswith("assets/")) and not os.path.isfile(os.path.join(d, tgt)):
@@ -211,9 +220,9 @@ def main():
             base = tgt.split("/")[-1]
             cand = base[:-3] if base.endswith(".md") else base
             if OPTIONAL_TARGETS.search(base):
-                if visuals_blocked and VISUAL_PRODUCTS.search(base):
+                if visuals_blocked and VISUAL_PRODUCTS.search(base) and not product_exists(d, base):
                     fail(errs, f"主笔记:视觉任务已 blocked,仍保留指向未生成产物的链接 [[{raw}]]")
-                if reports_blocked and NB_PRODUCTS.search(base):
+                if reports_blocked and NB_PRODUCTS.search(base) and not product_exists(d, base):
                     fail(errs, f"主笔记:NotebookLM 报告已 blocked,仍保留指向未生成产物的链接 [[{raw}]]")
                 continue
             if cand in suite_stems:
