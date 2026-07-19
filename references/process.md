@@ -349,6 +349,7 @@ python3 <skill根>/scripts/validate_notes.py "<论文输出目录>" "<File Stem>
 
 - 在 `plan.md` 中把视觉任务标为 `blocked`,写入失败日志并记录原因
 - **处理永久断链**:此时主笔记的 `banner` 应留空(或不写该字段),正文不要嵌入尚不存在的 `_infographic_zh.png` / `_slides_zh.pdf`,以免留下永久死链。视觉产物相关的 banner 与嵌入,统一等 Step 9 验证产物真实存在后再补写。
+- **降级替代(infographic)**:若 gpt-image-2 MCP 可用,可按 `references/ai-diagrams.md` 的"降级分支"用 gpt-image-2 生成一张 **NotebookLM 杂志风中文信息图**替代 `_infographic_zh.png` 的角色(存 `assets/`、带 AI 图注、banner 可指向它;数字只用已核实的真实值)。slide-deck 无替代,维持 `blocked`。
 - 仍然向用户汇报 `markdown_done`
 
 > 默认策略:笔记初稿先以"空 banner + 不嵌入视觉产物"落地;只有当 Step 9 验证 `_infographic_zh.png` / `_slides_zh.pdf` 确实存在,才回填 banner 与正文嵌入。这样无论视觉任务成功、延迟还是永久 blocked,主笔记都不会出现断链。

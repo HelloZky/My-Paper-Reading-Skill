@@ -24,6 +24,8 @@ notebooklm source wait <source_id> -n <notebook_id> --timeout 300   # 等索引;
 ## 真实命令契约(命令是 `generate report`,不是 `report`)
 
 > ⚠️ **关键坑(实测确认)**:`generate report --json` **只返回 `{task_id, status, url}`,不含报告正文**。直接把它的输出写进 `.md` 会得到一段无用的状态 JSON。**正文必须用 `download report` 单独取**(它把报告下成 markdown)。
+>
+> ⚠️ **`--wait` 可能提前返回(2026-07 实测,报告与视觉均复现)**:`generate ... --wait` 有时在 artifact 仍为 `pending` 时就以退出码 0 返回,导致 `&&` 链上的后续 `generate`/`download` 提前执行——下载报 `No completed ... artifacts found`,或整条链静默漏产物。**不要把 `--wait` 的返回当完成信号**:generate 排队后,用 `notebooklm artifact list -n <notebook_id> --json` 轮询目标 artifact 的 `status`,读到 `completed` 再 download,下载后校验正文非空。轮询要**单进程串行**(间隔约 45–60s):并发多个 CLI 进程查同一 notebook 会出现瞬时报错与状态抖动(偶见 completed↔pending 抖动),稳妥起见以**连续两次读到 `completed`** 为准。断点续传同理:凭 `plan.md` 里的 `notebook_id` 随时可用 `artifact list` + `download -a <artifact_id>` 补齐,不必重跑 generate。
 
 ```bash
 # 1) 先生成两份报告(--wait 阻塞到完成;此步不产出正文)

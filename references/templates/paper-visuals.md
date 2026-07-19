@@ -55,7 +55,8 @@
 
 #### 超时与重试
 
-- `generate slide-deck/infographic --wait` 建议 timeout 900s(生成耗时 5–15 分钟)
+- `generate slide-deck/infographic --wait` 建议 timeout 900s(生成耗时 5–15 分钟;slide-deck 常明显慢于 infographic)
+- ⚠️ **`--wait` 可能提前返回(2026-07 实测复现)**:`generate --wait` 有时在 artifact 仍 `pending` 时就以退出码 0 返回,`generate --wait && download` 的长链会静默漏产物(下载报 `No completed ... artifacts found`)。**推荐流程**:两个 `generate` **不带 `--wait`** 先后排队 → **单个串行循环**轮询 `artifact list -n <id> --json`(间隔 45–60s,连续两次读到 `completed` 才算)→ 逐个 `download` → 校验 magic bytes。不要开多个并发 CLI 进程轮询同一 notebook(会出现瞬时报错与 completed↔pending 状态抖动)
 - 若 `source wait` 子命令不存在或报错,改为固定等待约 60–90s 再继续
 - 若生成失败(rate limit),等 5–10 分钟后重试一次
 - 下载后必须校验文件真实存在且非空(PDF 以 `%PDF` 开头、PNG 以 PNG magic 开头)再置 `visuals_done`
