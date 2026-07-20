@@ -14,7 +14,9 @@
        notebooklm_cli→"notebooklm"(PATH 查找);
        pdf2md→无(改用自动探测 mineru-open-api CLI;见 Step 1d)
 
-字段:output_root / python / notebooklm_cli / pdf2md(均可选)。
+字段:output_root / python / notebooklm_cli / pdf2md(字符串,均可选);
+      notebooklm_enabled(布尔,默认 true;设 false 则 Step 7/8 干净跳过 NotebookLM,
+      infographic 走 gpt-image-2 降级,slide-deck 标 blocked——用于会员到期/无订阅时)。
 
 用法:
   python3 resolve_config.py [--cwd <dir>] [--json]
@@ -24,11 +26,13 @@
 import os, sys, json
 
 FIELDS = ["output_root", "python", "notebooklm_cli", "pdf2md"]
+BOOL_FIELDS = ["notebooklm_enabled"]   # 布尔字段:false 是有意义的值,不能当"未设置"
 ENV = {
     "output_root": "PAPER_READING_OUTPUT_ROOT",
     "python": "PAPER_READING_PYTHON",
     "notebooklm_cli": "PAPER_READING_NOTEBOOKLM_CLI",
     "pdf2md": "PAPER_READING_PDF2MD",
+    "notebooklm_enabled": "PAPER_READING_NOTEBOOKLM_ENABLED",
 }
 
 
@@ -78,11 +82,18 @@ def main():
         for k, v in d.items():
             if k in FIELDS and v:
                 cfg[k] = v; prov[k] = label
+            elif k in BOOL_FIELDS and isinstance(v, bool):   # 布尔:false 也要采纳
+                cfg[k] = v; prov[k] = label
 
     # 环境变量层(最高)
     for k, envname in ENV.items():
         v = os.environ.get(envname)
-        if v:
+        if v is None:
+            continue
+        if k in BOOL_FIELDS:                                  # 0/false/no/off → False,其余 → True
+            cfg[k] = v.strip().lower() not in ("0", "false", "no", "off", "")
+            prov[k] = f"env:{envname}"
+        elif v:
             cfg[k] = v; prov[k] = f"env:{envname}"
 
     # 内置兜底
@@ -96,6 +107,8 @@ def main():
         cfg["notebooklm_cli"] = "notebooklm"; prov["notebooklm_cli"] = "fallback(PATH)"
     if not cfg.get("pdf2md"):
         cfg["pdf2md"] = None; prov["pdf2md"] = "fallback(无,改用自动探测 mineru-open-api CLI)"
+    if "notebooklm_enabled" not in cfg:
+        cfg["notebooklm_enabled"] = True; prov["notebooklm_enabled"] = "fallback(默认启用)"
 
     out = dict(cfg)
     out["_provenance"] = prov
@@ -110,7 +123,7 @@ def main():
         print(json.dumps(out, ensure_ascii=False, indent=2))
     else:
         print("=== 有效配置 ===")
-        for k in FIELDS:
+        for k in FIELDS + BOOL_FIELDS:
             print(f"  {k} = {cfg.get(k)}   [{prov.get(k)}]")
         if warns:
             print("\n=== 告警 ===")

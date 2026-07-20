@@ -71,7 +71,11 @@
   - 可判为 `survey` 的强信号:以分类、对比、总结既有工作为主;没有提出完整的新方法;章节围绕 taxonomy / benchmark / trend / open challenges
   - 可判为 `regular` 的强信号:提出新模型、新训练目标、新算法或新实验设置,并以验证自身方法为主
   - 若标题像 `survey/review/overview`,但正文同时提出完整新方法、benchmark 或系统,则标为 `ambiguous`
-  - 判断结果和依据记入 `plan.md`,后续 Step 4 据此选择模板
+  - **测量 / 人因 / SoK / position 类论文(安全四大常见)**:这类论文**没有"可复现的新算法"**,而是做实证测量、用户研究、系统化梳理或立场论证(如"刻画 X 群体对 Y 的易感性""搜索能骗过检测器的攻击链")。**仍走 `regular` 模板**(不是 survey),但按下面适配写作重心:
+    - `paper-kind` 填 `regular`;frontmatter 的 `method-category` 用 `other`,并在 `category-path` 标出真实体裁(如 `音频 / 用户研究与可及性`)。
+    - **`方法介绍` 写"研究设计 / 实验协议"而非"方法复现"**:把"方法定位/总览/模块"读成"研究问题(RQ)/数据与被试/测量与统计/可解释性",讲清怎么设计实验、控制了哪些偏差、用了什么统计检验——而非硬套"新模型的模块拆解"。
+    - **`实验结果` 按 RQ(或研究问题)组织**,而非"主结果/消融/效率";把每个发现绑定到它回答的 RQ。
+    - 判断结果和依据记入 `plan.md`,后续 Step 4 据此选择模板
 
 - **Primary Research Area**
 - **Category Path**
@@ -135,7 +139,9 @@
 
 ## Step 2 — 解析配置与探测可选依赖(配置与 skill 解耦)
 
-**配置不写死在 skill 里**,而是分层解析(全局兜底 + vault 覆盖 + 环境变量)。支持字段:`output_root`、`python`、`notebooklm_cli`、`pdf2md`(PDF→Markdown 自定义命令,含 `{pdf}`/`{outdir}` 占位;见 Step 1d)。
+**配置不写死在 skill 里**,而是分层解析(全局兜底 + vault 覆盖 + 环境变量)。支持字段:`output_root`、`python`、`notebooklm_cli`、`pdf2md`(PDF→Markdown 自定义命令,含 `{pdf}`/`{outdir}` 占位;见 Step 1d)、`notebooklm_enabled`(布尔,缺省 `true`;置 `false` 则 Step 7/8 干净跳过 NotebookLM——见下)。
+
+> **`notebooklm_enabled: false` 的处理(会员到期/无订阅时的一等选项,不必每篇尝试→失败→记日志)**:解析到该字段为 `false` 时,**Step 7 直接把 `notebooklm_reports_*` 标 `skipped`**(失败日志记一条"配置禁用 NotebookLM",无需真的调用 CLI);**Step 8 的 slide-deck 标 `blocked`**,**infographic 直接走 `references/ai-diagrams.md` 的 gpt-image-2 降级分支**生成杂志风信息图。这样降级是配置驱动的常规路径,而非每次靠探测失败兜底。
 
 **优先用脚本做确定性解析**(纯标准库;它会打印每个字段来自哪一层 + 告警):
 
@@ -325,8 +331,8 @@ python3 <skill根>/scripts/validate_notes.py "<论文输出目录>" "<File Stem>
 
 ## Step 7 — 生成 NotebookLM 扩展报告(可用即默认执行)
 
-> 🔒 **默认执行,不是"想做才做"**:只要 `notebooklm_cli` **可用且认证有效、且用户没有显式拒绝**,就**必须执行** Step 7——**读 `references/notebooklm.md`** 按其两步法(`generate report --wait` → `download report --all`)生成简报/博文。
-> **不能因为它"可选"就跳过**;真要跳过,必须在 `plan.md` 失败日志写明具体原因(如"CLI 不可用 / 认证失效 / 用户显式拒绝"),并把 `notebooklm_reports_done` 标 `skipped`(而非装作完成)。CLI 不可用时不阻塞其余流程。
+> 🔒 **默认执行,不是"想做才做"**:只要 **`notebooklm_enabled` 未被配置为 `false`**、`notebooklm_cli` **可用且认证有效、且用户没有显式拒绝**,就**必须执行** Step 7——**读 `references/notebooklm.md`** 按其两步法(`generate report --wait` → `download report --all`)生成简报/博文。
+> **不能因为它"可选"就跳过**;真要跳过,必须在 `plan.md` 失败日志写明具体原因(如"配置 notebooklm_enabled=false / CLI 不可用 / 认证失效 / 用户显式拒绝"),并把 `notebooklm_reports_done` 标 `skipped`(而非装作完成)。CLI 不可用或配置禁用时不阻塞其余流程。
 
 ## Step 8 — 启动视觉材料任务(可用即默认执行)
 

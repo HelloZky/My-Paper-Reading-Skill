@@ -49,7 +49,11 @@ _KNOWN_PLACEHOLDER_WORDS = {"year", "venue", "date", "placeholder", "todo", "占
 
 def is_placeholder(inner):
     """inner 为 <...> 内文。返回 True 表示这是未替换的模板占位符(应拦)。
-    放行:HTML 标签/注释(<div..>, </span>, <!-- -->、带 = 的属性标签)、NLP 特殊 token(<eos>,<MASK>)。"""
+    放行:HTML 标签/注释(<div..>, </span>, <!-- -->、带 = 的属性标签)、NLP 特殊 token(<eos>,<MASK>)、
+    以及数学比较运算符(" A < x 且 y > B " 里的 "< x 且 y >")。"""
+    # 比较运算符 " < ... > " 两侧带空格,模板占位符是贴合的 "<x>"——据此放行不等号
+    if inner[:1].isspace() and inner[-1:].isspace():
+        return False
     inner = inner.strip()
     if not inner or inner[0] in "/!":          # 闭合标签 / 注释
         return False
@@ -63,6 +67,11 @@ def is_placeholder(inner):
     low = inner.lower()
     if low in _KNOWN_PLACEHOLDER_WORDS:         # <Year> <Venue> 等单词占位符
         return True
+    # 数学不等号 / 散文跨度放行(非占位符):形如 "WER < 0.15、说话人相似度 > 0.80"
+    # 里的 "< 0.15、说话人相似度 >"。真占位符是自包含名词短语,不会以数字/$ 开头,
+    # 也不含中文顿号/逗号/句号/分号——含这些即判为正文,避免不等号被误拦。
+    if inner[0].isdigit() or inner[0] == "$" or re.search(r"[、，。；]", inner):
+        return False
     # 占位符形态:含空格/竖线、含中文、连字符接大写(Primary-Research)、camelCase(FirstAuthor)
     if (" " in inner or "|" in inner
             or re.search(r"[一-鿿]", inner)

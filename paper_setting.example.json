@@ -9,5 +9,7 @@
   "output_root": "/abs/path/to/your/Obsidian-vault/论文笔记",
   "python": "python3",
   "notebooklm_cli": "notebooklm",
-  "pdf2md": ""
+  "pdf2md": "",
+  "_notebooklm_enabled 说明": "布尔,缺省 true。设为 false 时 Step 7/8 干净跳过 NotebookLM 报告与视觉(不再每篇尝试→失败→记日志),infographic 直接走 gpt-image-2 降级,slide-deck 标 blocked。会员到期/无订阅时置 false。",
+  "notebooklm_enabled": true
 }
